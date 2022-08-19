@@ -79,6 +79,9 @@ func WithDebugSpanExporter() launcher.Option {
 	return launcher.WithSpanProcessor(trace.NewSimpleSpanProcessor(spanExporter))
 }
 
+// Creates an exporter that writes a honeycomb trace link to the console.
+// TURN OFF IN PRODUCTION! This uses a SimpleSpanExporter which will
+// tank your performance if this is left on.
 func WithLocalVisualizations(apikey string, serviceName string) launcher.Option {
 	exporter, _ := NewSpanLinkExporter(apikey, serviceName)
 	return launcher.WithSpanProcessor(trace.NewSimpleSpanProcessor(exporter))
@@ -90,7 +93,7 @@ func getVendorOptionSetters() []launcher.Option {
 	}
 
 	apikey := ""
-	serviceName := ""
+	serviceName := "unknown_service:go"
 
 	if apikey = os.Getenv("HONEYCOMB_API_KEY"); apikey != "" {
 		opts = append(opts, WithApiKey(apikey))
