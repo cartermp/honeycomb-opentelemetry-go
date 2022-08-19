@@ -79,22 +79,33 @@ func WithDebugSpanExporter() launcher.Option {
 	return launcher.WithSpanProcessor(trace.NewSimpleSpanProcessor(spanExporter))
 }
 
+func WithLocalVisualizations(apikey string, serviceName string) launcher.Option {
+	return launcher.WithSpanProcessor(NewLocalVisualizationsSpanProcessor(apikey, serviceName, DefaultSpanExporterEndpoint))
+}
+
 func getVendorOptionSetters() []launcher.Option {
 	opts := []launcher.Option{
 		WithHoneycomb(),
 	}
-	if apikey := os.Getenv("HONEYCOMB_API_KEY"); apikey != "" {
+
+	apikey := ""
+	serviceName := ""
+
+	if apikey = os.Getenv("HONEYCOMB_API_KEY"); apikey != "" {
 		opts = append(opts, WithApiKey(apikey))
 	}
+
 	if dataset := os.Getenv("HONEYCOMB_DATASET"); dataset != "" {
 		opts = append(opts, WithDataset(dataset))
 	}
+
 	if sampleRateStr := os.Getenv("SAMPLE_RATE"); sampleRateStr != "" {
 		sampleRate, err := strconv.Atoi(sampleRateStr)
 		if err == nil {
 			opts = append(opts, WithSampler(sampleRate))
 		}
 	}
+
 	if enabledStr := os.Getenv("DEBUG"); enabledStr != "" {
 		enabled, _ := strconv.ParseBool(enabledStr)
 		if enabled {
@@ -102,9 +113,18 @@ func getVendorOptionSetters() []launcher.Option {
 			opts = append(opts, launcher.WithLogLevel("debug"))
 		}
 	}
-	if serviceName := os.Getenv("OTEL_SERVICE_NAME"); serviceName == "" {
+
+	if serviceName = os.Getenv("OTEL_SERVICE_NAME"); serviceName == "" {
 		opts = append(opts, launcher.WithServiceName("unknown_service:go"))
 	}
+
+	if enableLocalVisualizationsStr := os.Getenv("HONEYCOMB_ENABLE_LOCAL_VISUALIZATIONS"); enableLocalVisualizationsStr != "" {
+		enabled, _ := strconv.ParseBool(enableLocalVisualizationsStr)
+		if enabled && apikey != "" && serviceName != "" {
+			opts = append(opts, WithLocalVisualizations(apikey, serviceName))
+		}
+	}
+
 	return opts
 }
 
