@@ -99,6 +99,18 @@ func getVendorOptionSetters() []launcher.Option {
 		opts = append(opts, WithApiKey(apikey))
 	}
 
+	if endpoint := os.Getenv("HONEYCOMB_API_ENDPOINT"); endpoint != "" {
+		opts = append(opts, launcher.WithExporterEndpoint(endpoint))
+	}
+
+	if endpoint := os.Getenv("HONEYCOMB_TRACES_API_ENDPOINT"); endpoint != "" {
+		opts = append(opts, launcher.WithSpanExporterEndpoint(endpoint))
+	}
+
+	if endpoint := os.Getenv("HONEYCOMB_METRICS_API_ENDPOINT"); endpoint != "" {
+		opts = append(opts, launcher.WithMetricExporterEndpoint(endpoint))
+	}
+
 	if dataset := os.Getenv("HONEYCOMB_DATASET"); dataset != "" {
 		opts = append(opts, WithDataset(dataset))
 	}
@@ -128,6 +140,16 @@ func getVendorOptionSetters() []launcher.Option {
 			opts = append(opts, WithLocalVisualizations(apikey, serviceName))
 		}
 	}
+
+	// default metrics off unless explicity enabled
+	metricsEnabled := false
+	if enabledStr := os.Getenv("OTEL_METRICS_ENABLED"); enabledStr != "" {
+		enabled, _ := strconv.ParseBool(enabledStr)
+		if enabled {
+			metricsEnabled = true
+		}
+	}
+	opts = append(opts, launcher.WithMetricsEnabled(metricsEnabled))
 
 	return opts
 }

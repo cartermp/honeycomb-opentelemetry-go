@@ -218,3 +218,37 @@ func TestSettingDebugAlsoSetsLogLevelToDebug(t *testing.T) {
 	_, err := launcher.ConfigureOpenTelemetry()
 	assert.Nil(t, err)
 }
+
+func TestCanSetEndpointsUsingHoneycombEnvVars(t *testing.T) {
+	t.Setenv("HONEYCOMB_API_ENDPOINT", "generic-endpoint")
+	t.Setenv("HONEYCOMB_TRACES_API_ENDPOINT", "traces-endpoint")
+	t.Setenv("HONEYCOMB_METRICS_API_ENDPOINT", "metrics-endpoint")
+
+	launcher.ValidateConfig = func(c *launcher.Config) error {
+		assert.Equal(t, "generic-endpoint", c.ExporterEndpoint)
+		assert.Equal(t, "traces-endpoint", c.TracesExporterEndpoint)
+		assert.Equal(t, "metrics-endpoint", c.MetricsExporterEndpoint)
+		return nil
+	}
+	_, err := launcher.ConfigureOpenTelemetry()
+	assert.Nil(t, err)
+}
+
+func TestMetricsAreDisabledByDefault(t *testing.T) {
+	// disabled by default
+	launcher.ValidateConfig = func(c *launcher.Config) error {
+		assert.False(t, c.MetricsEnabled)
+		return nil
+	}
+	_, err := launcher.ConfigureOpenTelemetry()
+	assert.Nil(t, err)
+
+	// can be enabled
+	t.Setenv("OTEL_METRICS_ENABLED", "true")
+	launcher.ValidateConfig = func(c *launcher.Config) error {
+		assert.True(t, c.MetricsEnabled)
+		return nil
+	}
+	_, err = launcher.ConfigureOpenTelemetry()
+	assert.Nil(t, err)
+}
